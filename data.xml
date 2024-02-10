@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<java version="21.0.1" class="java.beans.XMLDecoder">
+ <object class="br.ufal.ic.p2.wepayu.models.EmpregadoComissionado">
+  <void property="endereco">
+   <string>Rua dos Jooes, 333 - Campina Grande</string>
+  </void>
+  <void property="id">
+   <string>05fb062d-02d2-4b67-b758-8852401b5689</string>
+  </void>
+  <void property="nome">
+   <string>Joao da Silva</string>
+  </void>
+  <void property="resultadoDeVendas">
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="br.ufal.ic.p2.wepayu.models.ResultadoDeVenda">
+      <void property="data">
+       <string>1/1/2005</string>
+      </void>
+      <void property="valor">
+       <string>800</string>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="br.ufal.ic.p2.wepayu.models.ResultadoDeVenda">
+      <void property="data">
+       <string>2/1/2005</string>
+      </void>
+      <void property="valor">
+       <string>850,5</string>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="br.ufal.ic.p2.wepayu.models.ResultadoDeVenda">
+      <void property="data">
+       <string>3/1/2005</string>
+      </void>
+      <void property="valor">
+       <string>900</string>
+      </void>
+     </object>
+    </void>
+    <void method="add">
+     <object class="br.ufal.ic.p2.wepayu.models.ResultadoDeVenda">
+      <void property="data">
+       <string>4/1/2005</string>
+      </void>
+      <void property="valor">
+       <string>600</string>
+      </void>
+     </object>
+    </void>
+   </object>
+  </void>
+  <void property="salarioMensal">
+   <string>1300</string>
+  </void>
+  <void property="sindicalizado">
+   <string>false</string>
+  </void>
+  <void property="taxaDeComissao">
+   <string>0,05</string>
+  </void>
+ </object>
+ <object class="br.ufal.ic.p2.wepayu.models.EmpregadoComissionado">
+  <void property="endereco">
+   <string>Rua das Marias, 333 - Campina Grande</string>
+  </void>
+  <void property="id">
+   <string>20dd8794-abb5-4a6a-87f4-6cbf2a866ecf</string>
+  </void>
+  <void property="nome">
+   <string>Mariazinha</string>
+  </void>
+  <void property="resultadoDeVendas">
+   <object class="java.util.ArrayList">
+    <void method="add">
+     <object class="br.ufal.ic.p2.wepayu.models.ResultadoDeVenda">
+      <void property="data">
+       <string>3/1/2005</string>
+      </void>
+      <void property="valor">
+       <string>1000</string>
+      </void>
+     </object>
+    </void>
+   </object>
+  </void>
+  <void property="salarioMensal">
+   <string>2300</string>
+  </void>
+  <void property="sindicalizado">
+   <string>false</string>
+  </void>
+  <void property="taxaDeComissao">
+   <string>0,05</string>
+  </void>
+ </object>
+ <object class="br.ufal.ic.p2.wepayu.models.EmpregadoHorista">
+  <void property="cartoes">
+   <object class="java.util.ArrayList"/>
+  </void>
+  <void property="endereco">
+   <string>Rua dos Bufoes, 333 - Campina Grande</string>
+  </void>
+  <void property="id">
+   <string>1267cb8c-0d2a-4ba2-b998-3089e8830462</string>
+  </void>
+  <void property="nome">
+   <string>Gaiato Vendedor</string>
+  </void>
+  <void property="salarioPorHora">
+   <string>13</string>
+  </void>
+  <void property="sindicalizado">
+   <string>false</string>
+  </void>
+ </object>
+ <object class="br.ufal.ic.p2.wepayu.models.EmpregadoAssalariado">
+  <void property="endereco">
+   <string>Rua das Marias, 333 - Campina Grande</string>
+  </void>
+  <void property="id">
+   <string>02f890ae-c90c-4b9a-a6c7-8fe97dde89aa</string>
+  </void>
+  <void property="nome">
+   <string>Gorete</string>
+  </void>
+  <void property="salarioMensal">
+   <string>2300</string>
+  </void>
+  <void property="sindicalizado">
+   <string>false</string>
+  </void>
+ </object>
+</java>
