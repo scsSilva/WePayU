@@ -1,18 +1,22 @@
 package br.ufal.ic.p2.wepayu.models;
 
+import br.ufal.ic.p2.wepayu.interfaces.IEmpregado;
+
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.List;
 
-public class EmpregadoHorista extends Empregado {
+import static br.ufal.ic.p2.wepayu.Utils.*;
+
+public class EmpregadoHorista extends Empregado implements IEmpregado {
     private String salarioPorHora;
-    private List<CartaoDePonto> cartoes;
 
-    public EmpregadoHorista() {}
+    public EmpregadoHorista() {
+    }
 
-    public EmpregadoHorista(String nome, String endereco, Boolean sindicalizado, String salarioPorHora, List<CartaoDePonto> cartoes) {
+    public EmpregadoHorista(String nome, String endereco, String sindicalizado, String salarioPorHora) {
         super(nome, endereco, sindicalizado);
         this.salarioPorHora = salarioPorHora;
-        this.cartoes = cartoes;
     }
 
     public String getSalarioPorHora() {
@@ -23,11 +27,26 @@ public class EmpregadoHorista extends Empregado {
         this.salarioPorHora = salarioPorHora;
     }
 
-    public List<CartaoDePonto> getCartoes() {
-        return cartoes;
+    @Override
+    public boolean isHorista() {
+        return true;
     }
 
-    public void setCartoes(List<CartaoDePonto> cartoes) {
-        this.cartoes = cartoes;
+    @Override
+    public String getAtributo(String atributo) {
+        switch (atributo) {
+            case "nome":
+                return getNome();
+            case "endereco":
+                return getEndereco();
+            case "tipo":
+                return "horista";
+            case "salario":
+                return formatSalario(salarioPorHora);
+            case "sindicalizado":
+                return getSindicalizado();
+            default:
+                return null;
+        }
     }
 }

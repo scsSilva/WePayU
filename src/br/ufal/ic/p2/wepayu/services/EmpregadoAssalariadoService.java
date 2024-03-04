@@ -1,5 +1,6 @@
 package br.ufal.ic.p2.wepayu.services;
 
+import br.ufal.ic.p2.wepayu.Exception.Empregado.EmpregadoNaoComissionadoException;
 import br.ufal.ic.p2.wepayu.dao.EmpregadoDAO;
 import br.ufal.ic.p2.wepayu.models.Empregado;
 import br.ufal.ic.p2.wepayu.models.EmpregadoAssalariado;
@@ -18,7 +19,7 @@ public class EmpregadoAssalariadoService {
     public String adicionarEmpregado(String nome, String endereco, String salario) throws Exception {
         empregados = empregadoDAO.getEmpregadosXML(filename);
 
-        EmpregadoAssalariado empregadoAssalariado = new EmpregadoAssalariado(nome, endereco, false, salario);
+        EmpregadoAssalariado empregadoAssalariado = new EmpregadoAssalariado(nome, endereco, "false", salario);
         empregadoAssalariado.validarCampo("Nome", nome, "");
         empregadoAssalariado.validarCampo("Endereco", endereco, "");
         empregadoAssalariado.verificarSalario(salario);
@@ -30,7 +31,7 @@ public class EmpregadoAssalariadoService {
     }
 
     // Busca um atributo específico do empregado e retorna o valor
-    public String getAtributo(Empregado empregado, String atributo) {
+    public String getAtributo(Empregado empregado, String atributo) throws EmpregadoNaoComissionadoException {
         String response = null;
 
         response = switch (atributo) {
@@ -39,6 +40,7 @@ public class EmpregadoAssalariadoService {
             case "tipo" -> "assalariado";
             case "salario" -> formatSalario(((EmpregadoAssalariado) empregado).getSalarioMensal());
             case "sindicalizado" -> ((EmpregadoAssalariado) empregado).getSindicalizado();
+            case "comissao" -> throw new EmpregadoNaoComissionadoException("Empregado nao eh comissionado.");
             default -> null;
         };
 

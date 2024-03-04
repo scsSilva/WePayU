@@ -6,47 +6,91 @@ import br.ufal.ic.p2.wepayu.Exception.Empregado.EmpregadoNaoComissionadoExceptio
 import br.ufal.ic.p2.wepayu.Exception.Empregado.EmpregadoNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.Empregado.SalarioInvalidoException;
 import br.ufal.ic.p2.wepayu.dao.EmpregadoDAO;
+import br.ufal.ic.p2.wepayu.dao.ResultadoDeVendaDAO;
 import br.ufal.ic.p2.wepayu.models.Empregado;
-import br.ufal.ic.p2.wepayu.models.EmpregadoComissionado;
 import br.ufal.ic.p2.wepayu.models.ResultadoDeVenda;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import static br.ufal.ic.p2.wepayu.Utils.parseDate;
 import static br.ufal.ic.p2.wepayu.Utils.validarData;
 
 public class CartaoDeVendaService {
     EmpregadoDAO empregadoDAO = new EmpregadoDAO();
+    ResultadoDeVendaDAO resultadoDeVendaDAO = new ResultadoDeVendaDAO();
     List<Empregado> empregados = new ArrayList<>();
-    String filename = "data.xml";
+    List<ResultadoDeVenda> resultados = new ArrayList<>();
+    String filename = "vendas.xml";
+    String filenameEmpregado = "data.xml";
 
-    // Função auxiliar (principal é a buscaResultadoVendas) para calcular o total de vendas em determinado período
-    public double calcularTotalDeVendas(List<ResultadoDeVenda> resultadoDeVendas, LocalDate dataInicial, LocalDate dataFinal) throws Exception {
+    public void cadastrarVenda(String idEmpregado, String data, String valor) throws Exception {
+        resultados = resultadoDeVendaDAO.getVendasXML(filename);
+        empregados = empregadoDAO.getEmpregadosXML(filenameEmpregado);
+        boolean encontrado = false;
+        boolean comissionado = false;
+
+        if (idEmpregado.isEmpty()) {
+            throw new AtributoNuloException("Identificacao do empregado nao pode ser nula.");
+        }
+
+        for (Empregado empregado : empregados) {
+            if (empregado.getId().equals(idEmpregado)) {
+                encontrado = true;
+                comissionado = empregado.isComissionado();
+            }
+        }
+
+        if (!encontrado) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        if (!comissionado) {
+            throw new EmpregadoNaoComissionadoException("Empregado nao eh comissionado.");
+        }
+
+        String salarioFormatado = valor.replace(",", ".");
+        if (Double.parseDouble(salarioFormatado) <= 0) {
+            throw new SalarioInvalidoException("Valor deve ser positivo.");
+        }
+
+        LocalDate dataFormatada;
+        try {
+            dataFormatada = parseDate(data);
+        } catch (DateTimeParseException e) {
+            throw new DataInvalidaException("Data invalida.");
+        }
+
+        ResultadoDeVenda resultadoDeVenda = new ResultadoDeVenda(idEmpregado, data, valor);
+        resultados.add(resultadoDeVenda);
+
+        resultadoDeVendaDAO.salvarVendasXML(resultados, filename);
+    }
+
+    public double calcularTotalDeVendas(String idEmpregado, LocalDate dataInicial, LocalDate dataFinal)
+            throws Exception {
         double total = 0;
+        resultados = resultadoDeVendaDAO.getVendasXML(filename);
+        List<ResultadoDeVenda> resultadosDoEmpregado = resultados.stream()
+                .filter(resultado -> resultado.getIdEmpregado().equals(idEmpregado)).toList();
 
-        for (ResultadoDeVenda resultadoDeVenda : resultadoDeVendas) {
-            LocalDate data = parseDate(resultadoDeVenda.getData());
-            int comparisonInicio = data.compareTo(dataInicial);
-            int comparisonFinal = data.compareTo(dataFinal);
-
-            if (comparisonInicio >= 0 && comparisonFinal < 0) {
-                total += Double.parseDouble(resultadoDeVenda.getValor().replace(',', '.'));
+        for (ResultadoDeVenda resultado : resultadosDoEmpregado) {
+            LocalDate data = parseDate(resultado.getData());
+            if (data.compareTo(dataInicial) >= 0 && data.compareTo(dataFinal) < 0) {
+                total += Double.parseDouble(resultado.getValor().replace(',', '.'));
             }
         }
 
         return total;
     }
 
-    // Calcula as vendas em determinado período, verificando os requisitos
-    public String buscaResultadoDeVendas(String id, String dataInicial, String dataFinal) throws Exception {
-        double total = 0;
+    public String buscaResultadoDeVendas(String idEmpregado, String dataInicial, String dataFinal) throws Exception {
         LocalDate dataInicialFormated;
         LocalDate dataFinalFormated;
-        empregados = empregadoDAO.getEmpregadosXML(filename);
+        empregados = empregadoDAO.getEmpregadosXML(filenameEmpregado);
+        boolean comissionado = false;
 
         try {
             dataInicialFormated = parseDate(dataInicial);
@@ -58,66 +102,23 @@ public class CartaoDeVendaService {
             throw new DataInvalidaException("Data final invalida.");
         }
 
+        for (Empregado empregado : empregados) {
+            if (empregado.getId().equals(idEmpregado)) {
+                comissionado = empregado.isComissionado();
+            }
+        }
+
+        if (!comissionado) {
+            throw new EmpregadoNaoComissionadoException("Empregado nao eh comissionado.");
+        }
+
         dataFinalFormated = parseDate(dataFinal);
 
         if (dataInicialFormated.isAfter(dataFinalFormated)) {
             throw new DataInvalidaException("Data inicial nao pode ser posterior aa data final.");
         }
 
-        for (Empregado empregado : empregados) {
-            if (empregado.getId().equals(id)) {
-                if (empregado instanceof EmpregadoComissionado) {
-                    total = calcularTotalDeVendas(((EmpregadoComissionado) empregado).getResultadoDeVendas(), dataInicialFormated,
-                            dataFinalFormated);
-                } else {
-                    throw new EmpregadoNaoComissionadoException("Empregado nao eh comissionado.");
-                }
-            }
-        }
-
-        Locale locale = Locale.getDefault();
-
-        return String.format(locale, "%.2f", total);
-    }
-
-    // Cadastra uma venda na base de dados (XML)
-    public void cadastrarVenda(String id, String data, String valor) throws Exception {
-        empregados = empregadoDAO.getEmpregadosXML(filename);
-        boolean encontrado = false;
-        String salarioFormatado = valor.replace(",", ".");
-        LocalDate dataFormatada;
-
-        if (id.isEmpty()) {
-            throw new AtributoNuloException("Identificacao do empregado nao pode ser nula.");
-        }
-
-        if (Double.parseDouble(salarioFormatado) <= 0) {
-            throw new SalarioInvalidoException("Valor deve ser positivo.");
-        }
-
-        try {
-            dataFormatada = parseDate(data);
-        } catch (DateTimeParseException e) {
-            throw new DataInvalidaException("Data invalida.");
-        }
-
-        for (Empregado empregado : empregados) {
-            if (empregado.getId().equals(id)) {
-                encontrado = true;
-
-                if (empregado instanceof EmpregadoComissionado) {
-                    ResultadoDeVenda resultadoDeVenda = new ResultadoDeVenda(data, valor);
-                    ((EmpregadoComissionado) empregado).getResultadoDeVendas().add(resultadoDeVenda);
-                } else {
-                    throw new EmpregadoNaoComissionadoException("Empregado nao eh comissionado.");
-                }
-            }
-        }
-
-        if (!encontrado) {
-            throw new EmpregadoNaoExisteException();
-        }
-
-        empregadoDAO.salvarEmpregadosXML(empregados, filename);
+        double total = calcularTotalDeVendas(idEmpregado, dataInicialFormated, dataFinalFormated);
+        return String.format("%.2f", total);
     }
 }

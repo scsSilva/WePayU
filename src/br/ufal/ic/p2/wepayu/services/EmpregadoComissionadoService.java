@@ -19,9 +19,9 @@ public class EmpregadoComissionadoService {
     // Adiciona um novo empregado na base de dados (XML) e retorna o seu ID
     public String adicionarEmpregado(String nome, String endereco, String salario, String comissao) throws Exception {
         empregados = empregadoDAO.getEmpregadosXML(filename);
-        List<ResultadoDeVenda> resultadoDeVendas = new ArrayList<>();
 
-        EmpregadoComissionado empregadoComissionado = new EmpregadoComissionado(nome, endereco, false, salario, comissao, resultadoDeVendas);
+        EmpregadoComissionado empregadoComissionado = new EmpregadoComissionado(nome, endereco, "false", salario,
+                comissao);
         empregadoComissionado.validarCampo("Nome", nome, "");
         empregadoComissionado.validarCampo("Endereco", endereco, "");
         empregadoComissionado.verificarSalario(salario);

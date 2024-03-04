@@ -1,7 +1,10 @@
 package br.ufal.ic.p2.wepayu.services;
 
 import br.ufal.ic.p2.wepayu.Exception.CartaoDePontoEVenda.DataInvalidaException;
+import br.ufal.ic.p2.wepayu.Exception.Empregado.EmpregadoNaoComissionadoException;
+import br.ufal.ic.p2.wepayu.Exception.Empregado.EmpregadoNaoExisteException;
 import br.ufal.ic.p2.wepayu.Exception.Empregado.EmpregadoNaoHoristaException;
+import br.ufal.ic.p2.wepayu.dao.CartaoDePontoDAO;
 import br.ufal.ic.p2.wepayu.dao.EmpregadoDAO;
 import br.ufal.ic.p2.wepayu.models.CartaoDePonto;
 import br.ufal.ic.p2.wepayu.models.Empregado;
@@ -20,15 +23,17 @@ import static br.ufal.ic.p2.wepayu.Utils.parseDate;
 
 public class EmpregadoHoristaService {
     EmpregadoDAO empregadoDAO = new EmpregadoDAO();
+    CartaoDePontoDAO cartaoDePontoDAO = new CartaoDePontoDAO();
     List<Empregado> empregados = new ArrayList<>();
+    List<CartaoDePonto> cartoesDePonto = new ArrayList<>();
     String filename = "data.xml";
+    String filenameCartoes = "pontos.xml";
 
     // Adiciona um novo empregado na base de dados (XML) e retorna o seu ID
     public String adicionarEmpregado(String nome, String endereco, String salario) throws Exception {
         empregados = empregadoDAO.getEmpregadosXML(filename);
-        List<CartaoDePonto> cartoes = new ArrayList<>();
 
-        EmpregadoHorista empregadoHorista = new EmpregadoHorista(nome, endereco, false, salario, cartoes);
+        EmpregadoHorista empregadoHorista = new EmpregadoHorista(nome, endereco, "false", salario);
         empregadoHorista.validarCampo("Nome", nome, "");
         empregadoHorista.validarCampo("Endereco", endereco, "");
         empregadoHorista.verificarSalario(salario);
@@ -40,7 +45,7 @@ public class EmpregadoHoristaService {
     }
 
     // Busca um atributo específico do empregado e retorna o valor
-    public String getAtributo(Empregado empregado, String atributo) {
+    public String getAtributo(Empregado empregado, String atributo) throws EmpregadoNaoComissionadoException {
         String response = null;
 
         response = switch (atributo) {
@@ -49,10 +54,18 @@ public class EmpregadoHoristaService {
             case "tipo" -> "horista";
             case "salario" -> formatSalario(((EmpregadoHorista) empregado).getSalarioPorHora());
             case "sindicalizado" -> ((EmpregadoHorista) empregado).getSindicalizado();
+            case "comissao" -> {
+                throwComissaoException();
+                yield null;
+            }
             default -> null;
         };
 
         return response;
+    }
+
+    private void throwComissaoException() throws EmpregadoNaoComissionadoException {
+        throw new EmpregadoNaoComissionadoException("Empregado nao eh comissionado.");
     }
 
     // Calcula a quantidade de horas normais trabalhadas em determinado período
@@ -79,16 +92,30 @@ public class EmpregadoHoristaService {
             throw new DataInvalidaException("Data inicial nao pode ser posterior aa data final.");
         }
 
+        boolean encontrado = false;
+        boolean horista = false;
+        empregados = empregadoDAO.getEmpregadosXML(filename);
+
         for (Empregado empregado : empregados) {
             if (empregado.getId().equals(id)) {
-                if (empregado instanceof EmpregadoHorista) {
-                    horas = calcularHorasNormais(((EmpregadoHorista) empregado).getCartoes(), parseDate(dataInicial),
-                            parseDate(dataFinal));
-                } else {
-                    throw new EmpregadoNaoHoristaException("Empregado nao eh horista.");
-                }
+                encontrado = true;
+                horista = empregado.isHorista();
             }
         }
+
+        if (!encontrado) {
+            throw new EmpregadoNaoExisteException();
+        }
+
+        if (!horista) {
+            throw new EmpregadoNaoHoristaException("Empregado nao eh horista.");
+        }
+
+        cartoesDePonto = cartaoDePontoDAO.getCartoesDePontoXML(filenameCartoes);
+        List<CartaoDePonto> cartoesDoEmpregado = cartoesDePonto.stream()
+                .filter(cartao -> cartao.getIdEmpregado().equals(id)).toList();
+
+        horas = calcularHorasNormais(cartoesDoEmpregado, parseDate(dataInicial), parseDate(dataFinal));
 
         DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.getDefault());
         symbols.setDecimalSeparator(',');
@@ -105,16 +132,15 @@ public class EmpregadoHoristaService {
 
         empregados = empregadoDAO.getEmpregadosXML(filename);
 
-        for (Empregado empregado : empregados) {
-            if (empregado.getId().equals(id) && empregado instanceof EmpregadoHorista) {
-                double horasTrabalhadas = Double
-                        .parseDouble(buscarHorasNormaisTrabalhadas(id, dataInicial, dataFinal).replace(',', '.'));
-                double horasTotais = calcularHorasTotais(((EmpregadoHorista) empregado).getCartoes(), inicioPeriodo,
-                        finalPeriodo);
+        cartoesDePonto = cartaoDePontoDAO.getCartoesDePontoXML(filenameCartoes);
+        List<CartaoDePonto> cartoesDoEmpregado = cartoesDePonto.stream()
+                .filter(cartao -> cartao.getIdEmpregado().equals(id)).toList();
 
-                horas = horasTotais - horasTrabalhadas;
-            }
-        }
+        double horasTrabalhadas = Double
+                .parseDouble(buscarHorasNormaisTrabalhadas(id, dataInicial, dataFinal).replace(',', '.'));
+        double horasTotais = calcularHorasTotais(cartoesDoEmpregado, inicioPeriodo, finalPeriodo);
+
+        horas = horasTotais - horasTrabalhadas;
 
         return dataFormatada(horas);
     }
@@ -146,7 +172,8 @@ public class EmpregadoHoristaService {
         return total;
     }
 
-    // Função auxiliar para calcular a quantidade total de horas trabalhadas em determinado período
+    // Função auxiliar para calcular a quantidade total de horas trabalhadas em
+    // determinado período
     public double calcularHorasTotais(List<CartaoDePonto> cartoes, LocalDate dataInicial, LocalDate dataFinal) {
         double total = 0;
 

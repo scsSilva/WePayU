@@ -1,10 +1,12 @@
 package br.ufal.ic.p2.wepayu.services;
+
 import br.ufal.ic.p2.wepayu.Exception.Empregado.AtributoNuloException;
 import br.ufal.ic.p2.wepayu.Exception.Empregado.EmpregadoNaoExisteException;
 import br.ufal.ic.p2.wepayu.dao.EmpregadoDAO;
 import br.ufal.ic.p2.wepayu.models.Empregado;
 import br.ufal.ic.p2.wepayu.models.EmpregadoAssalariado;
 import br.ufal.ic.p2.wepayu.models.EmpregadoComissionado;
+import br.ufal.ic.p2.wepayu.models.MembroSindicato;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,14 +37,7 @@ public class EmpregadoService {
             for (Empregado empregado : empregados) {
                 if (empregado.getId().equals(id)) {
                     encontrado = true;
-
-                    if (empregado instanceof EmpregadoComissionado) {
-                        response = empregadoComissionadoService.getAtributo(empregado, atributo);
-                    } else if (empregado instanceof EmpregadoAssalariado) {
-                        response = empregadoAssalariadoService.getAtributo(empregado, atributo);
-                    } else {
-                        response = empregadoHoristaService.getAtributo(empregado, atributo);
-                    }
+                    response = empregado.getAtributo(atributo);
                 }
             }
 
@@ -60,7 +55,8 @@ public class EmpregadoService {
         return response;
     }
 
-    // Busca um empregado específico na base de dados (XML) levando em consideração o seu nome
+    // Busca um empregado específico na base de dados (XML) levando em consideração
+    // o seu nome
     public String buscaEmpregadoPorNome(String nome, int indice) throws Exception {
         empregados = empregadoDAO.getEmpregadosXML(filename);
         List<Empregado> filtrados = empregados.stream().filter(empregado -> empregado.getNome().equals(nome)).toList();
@@ -94,5 +90,49 @@ public class EmpregadoService {
         } else {
             throw new EmpregadoNaoExisteException();
         }
+    }
+
+    public void alteraDadosEmpregado(String id, String atibuto, String valor) {
+        empregados = empregadoDAO.getEmpregadosXML(filename);
+
+        for (Empregado empregado : empregados) {
+            if (empregado.getId().equals(id)) {
+                if (atibuto.equals("sindicalizado")) {
+                    empregado.setSindicalizado(valor);
+                }
+
+                break;
+            }
+        }
+
+        empregadoDAO.salvarEmpregadosXML(empregados, filename);
+    }
+
+    public void alteraDadosEmpregado(String id, String atributo, String valor, String idSindicato, String taxaSindical)
+            throws Exception {
+        empregados = empregadoDAO.getEmpregadosXML(filename);
+
+        for (Empregado empregado : empregados) {
+            if (empregado.isMembroSindicato()) {
+                if (((MembroSindicato) empregado).getIdMembro().equals(idSindicato)) {
+                    throw new Exception("Ha outro empregado com esta identificacao de sindicato");
+                }
+            }
+        }
+
+        for (Empregado empregado : empregados) {
+            if (empregado.getId().equals(id)) {
+                if (atributo.equals("sindicalizado")) {
+                    empregado.setSindicalizado(valor);
+                    MembroSindicato membroSindicato = new MembroSindicato(empregado.getNome(), empregado.getEndereco(),
+                            empregado.getSindicalizado(), idSindicato, taxaSindical, new ArrayList<>());
+                    empregados.add(membroSindicato);
+                }
+
+                break;
+            }
+        }
+
+        empregadoDAO.salvarEmpregadosXML(empregados, filename);
     }
 }

@@ -2,23 +2,26 @@ package br.ufal.ic.p2.wepayu.models;
 
 import br.ufal.ic.p2.wepayu.Exception.Empregado.AtributoNuloException;
 import br.ufal.ic.p2.wepayu.Exception.Empregado.SalarioInvalidoException;
+import br.ufal.ic.p2.wepayu.interfaces.IEmpregado;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.UUID;
 
-public class Empregado implements Serializable {
+public class Empregado implements Serializable, IEmpregado {
     private String id;
     private String nome;
     private String endereco;
     private String sindicalizado;
 
-    public Empregado() {}
+    public Empregado() {
+    }
 
-    public Empregado(String nome, String endereco, Boolean sindicalizado) {
+    public Empregado(String nome, String endereco, String sindicalizado) {
         this.id = UUID.randomUUID().toString();
         this.nome = nome;
         this.endereco = endereco;
-        this.sindicalizado = sindicalizado.toString();
+        this.sindicalizado = sindicalizado;
     }
 
     public String getId() {
@@ -53,7 +56,8 @@ public class Empregado implements Serializable {
         this.sindicalizado = sindicalizado;
     }
 
-    // Recebe o valor de algum campo da classe empregado e faz a sua validação. Também recebe uma mensagem para ser exibida, caso ocorra algum erro
+    // Recebe o valor de algum campo da classe empregado e faz a sua validação.
+    // Também recebe uma mensagem para ser exibida, caso ocorra algum erro
     public void validarCampo(String nomeCampo, String valor, String message) throws Exception {
         if (valor.isEmpty()) {
             if (!message.isEmpty()) {
@@ -79,5 +83,22 @@ public class Empregado implements Serializable {
         } catch (NumberFormatException e) {
             throw new SalarioInvalidoException("Salario deve ser numerico.");
         }
+    }
+
+    public boolean isComissionado() {
+        return false;
+    }
+
+    public boolean isHorista() {
+        return false;
+    }
+
+    public boolean isMembroSindicato() {
+        return false;
+    }
+
+    @Override
+    public String getAtributo(String atributo) {
+        return null;
     }
 }
